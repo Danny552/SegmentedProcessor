@@ -1,0 +1,43 @@
+# Reading pref.tcl
+# do riscvpc_run_msim_rtl_verilog.do
+# if {[file exists rtl_work]} {
+# 	vdel -lib rtl_work -all
+# }
+# vlib rtl_work
+# vmap work rtl_work
+# Model Technology ModelSim - Intel FPGA Edition vmap 2020.1 Lib Mapping Utility 2020.02 Feb 28 2020
+# vmap work rtl_work 
+# Copying C:/intelFPGA_lite/20.1/modelsim_ase/win32aloem/../modelsim.ini to modelsim.ini
+# Modifying modelsim.ini
+# 
+# vlog -sv -work work +incdir+C:/quartus/ARQUITECTURA/single-cycle {C:/quartus/ARQUITECTURA/single-cycle/top_level.sv}
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 17:44:57 on Sep 26,2025
+# vlog -reportprogress 300 -sv -work work "+incdir+C:/quartus/ARQUITECTURA/single-cycle" C:/quartus/ARQUITECTURA/single-cycle/top_level.sv 
+# -- Compiling module top_level
+# 
+# Top level modules:
+# 	top_level
+# End time: 17:44:57 on Sep 26,2025, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vlog -sv -work work +incdir+C:/quartus/ARQUITECTURA/single-cycle {C:/quartus/ARQUITECTURA/single-cycle/pc.sv}
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 17:44:57 on Sep 26,2025
+# vlog -reportprogress 300 -sv -work work "+incdir+C:/quartus/ARQUITECTURA/single-cycle" C:/quartus/ARQUITECTURA/single-cycle/pc.sv 
+# -- Compiling module pc
+# 
+# Top level modules:
+# 	pc
+# End time: 17:44:58 on Sep 26,2025, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# vlog -sv -work work +incdir+C:/quartus/ARQUITECTURA/single-cycle {C:/quartus/ARQUITECTURA/single-cycle/hex7seg.sv}
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 17:44:58 on Sep 26,2025
+# vlog -reportprogress 300 -sv -work work "+incdir+C:/quartus/ARQUITECTURA/single-cycle" C:/quartus/ARQUITECTURA/single-cycle/hex7seg.sv 
+# -- Compiling module hex7seg
+# 
+# Top level modules:
+# 	hex7seg
+# End time: 17:44:58 on Sep 26,2025, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 

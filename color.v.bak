@@ -1,0 +1,258 @@
+// =================================================================
+// MODULO COLOR.V (MODIFICADO PARA DEBUG DE CPU EN 1280x800)
+// Contiene: Lógica de Pintado, Clock y Controlador de Sincronización
+// =================================================================
+module color(
+  input clock,                 // 50 MHz clock
+  input sw0,                   // Reset (usado por el controlador VGA)
+  // PUERTOS VGA ORIGINALES
+  output reg [7:0] vga_red,    // VGA outputs
+  output reg [7:0] vga_green,
+  output reg [7:0] vga_blue,
+  output vga_hsync,
+  output vga_vsync,
+  output vga_clock,
+  
+  // === PUERTOS DE DEBUG AÑADIDOS ===
+  input  logic [31:0] pc_addr,
+  input  logic [31:0] instr,
+  input  logic [31:0] alu_result,
+  input  logic [31:0] reg_data1, // rs1 data
+  input  logic [31:0] reg_data2, // rs2 data
+  input  logic [31:0] rd_data,   // write_back_data
+  input  logic        regWrite,
+  input  logic        MemRead,
+  input  logic        MemWrite
+  // =================================
+);
+  
+  // x y y coordenadas
+  wire [10:0] x;
+  wire [9:0] y;
+  wire videoOn;
+  
+  wire vgaclk;
+  
+  // El reset del profesor usa sw0
+  wire reset = sw0; 
+  
+  // ===================================
+  // INSTANCIA DEL GENERADOR DE RELOJ (PLL)
+  // ===================================
+  clock1280x800 vgaclock(
+	.clock50(clock),
+	.reset(reset),
+	.vgaclk(vgaclk)
+  );
+  
+  assign vga_clock = vgaclk;
+  
+  // ===================================
+  // INSTANCIA DEL CONTROLADOR DE TEMPORIZACIÓN
+  // ===================================
+  vga_controller_1280x800 pt(
+    .clk(vgaclk), 
+    .reset(reset), 
+    .video_on(videoOn), 
+    .hsync(vga_hsync), 
+    .vsync(vga_vsync), 
+    .hcount(x), .vcount(y)
+  );
+
+  // ===================================
+  // LÓGICA DE DISPLAY DE TEXTO (AÑADIDA)
+  // ===================================
+    
+  // Parámetros de la Pantalla y Fuente (16x16 pixels)
+  localparam H_RES      = 1280; 
+  localparam CHAR_WIDTH = 16;   
+  localparam CHAR_HEIGHT= 16;   
+  localparam COLS = H_RES / CHAR_WIDTH; // 80 columnas
+  localparam ROWS = 800 / CHAR_HEIGHT;// 50 filas
+
+  // Coordenadas de caracter y pixel
+  wire [6:0] char_col = x / CHAR_WIDTH; // 0 a 79
+  wire [5:0] char_row = y / CHAR_HEIGHT; // 0 a 49
+  wire [3:0] pixel_in_col = x % CHAR_WIDTH; // 0 a 15
+  wire [3:0] pixel_in_row = y % CHAR_HEIGHT; // 0 a 15
+
+  // Buffer de pantalla y ROM de fuentes
+  reg [7:0] screen_buffer [ROWS-1:0][COLS-1:0];
+  wire [7:0] current_ascii_code = screen_buffer[char_row][char_col];
+  wire [15:0] font_pattern;
+
+  // Instancia de la ROM de Fuentes (DEBE EXISTIR font_rom.sv)
+  font_rom u_font_rom (
+    .ascii_code(current_ascii_code),
+    .row_index(pixel_in_row),
+    .pattern(font_pattern)
+  );
+
+  // Lógica para llenar el buffer de texto con datos de debug
+  always_comb begin
+    // Inicializar a espacio
+    for (integer r = 0; r < ROWS; r = r + 1) begin
+      for (integer c = 0; c < COLS; c = c + 1) begin
+        screen_buffer[r][c] = 8'h20; // Espacio ASCII
+      end
+    end
+
+    localparam HEX_COL = 10;
+    
+    // Etiqueta y Datos del PC
+    screen_buffer[0][0] = 8'h50; screen_buffer[0][1] = 8'h43; screen_buffer[0][2] = 8'h3A; screen_buffer[0][3] = 8'h20; // PC: 
+    $h2ascii(pc_addr, screen_buffer[0][HEX_COL], 8);
+    
+    // Etiqueta y Datos de la Instrucción
+    screen_buffer[1][0] = 8'h49; screen_buffer[1][1] = 8'h4E; screen_buffer[1][2] = 8'h53; screen_buffer[1][3] = 8'h54; screen_buffer[1][4] = 8'h52; screen_buffer[1][5] = 8'h3A; screen_buffer[1][6] = 8'h20; // INSTR: 
+    $h2ascii(instr, screen_buffer[1][HEX_COL], 8);
+    
+    // Etiqueta y Datos de la ALU
+    screen_buffer[2][0] = 8'h41; screen_buffer[2][1] = 8'h4C; screen_buffer[2][2] = 8'h55; screen_buffer[2][3] = 8'h3A; screen_buffer[2][4] = 8'h20; // ALU: 
+    $h2ascii(alu_result, screen_buffer[2][HEX_COL], 8);
+
+    // Etiqueta y Datos de RS1 y RS2
+    screen_buffer[3][0] = 8'h52; screen_buffer[3][1] = 8'h53; screen_buffer[3][2] = 8'h31; screen_buffer[3][3] = 8'h3A; screen_buffer[3][4] = 8'h20; // RS1: 
+    $h2ascii(reg_data1, screen_buffer[3][HEX_COL], 8);
+    screen_buffer[4][0] = 8'h52; screen_buffer[4][1] = 8'h53; screen_buffer[4][2] = 8'h32; screen_buffer[4][3] = 8'h3A; screen_buffer[4][4] = 8'h20; // RS2: 
+    $h2ascii(reg_data2, screen_buffer[4][HEX_COL], 8);
+    
+    // Etiqueta y Datos de Write Back (RD_Data)
+    screen_buffer[5][0] = 8'h57; screen_buffer[5][1] = 8'h42; screen_buffer[5][2] = 8'h3A; screen_buffer[5][3] = 8'h20; // WB: 
+    $h2ascii(rd_data, screen_buffer[5][HEX_COL], 8);
+
+    // Control Flags (REGWRITE, MEMREAD, MEMWRITE)
+    screen_buffer[7][0] = 8'h52; screen_buffer[7][1] = 8'h57; screen_buffer[7][2] = 8'h3A; screen_buffer[7][3] = 8'h20; // RW:
+    screen_buffer[7][4] = regWrite ? 8'h31 : 8'h30; // 1 o 0
+    
+    screen_buffer[7][6] = 8'h4D; screen_buffer[7][7] = 8'h52; screen_buffer[7][8] = 8'h3A; screen_buffer[7][9] = 8'h20; // MR:
+    screen_buffer[7][10] = MemRead ? 8'h31 : 8'h30;
+    
+    screen_buffer[7][12] = 8'h4D; screen_buffer[7][13] = 8'h57; screen_buffer[7][14] = 8'h3A; screen_buffer[7][15] = 8'h20; // MW:
+    screen_buffer[7][16] = MemWrite ? 8'h31 : 8'h30;
+  end
+  
+  // Tarea para convertir datos de 32 bits (Hex) a 8 dígitos ASCII
+  task automatic $h2ascii;
+    input  [31:0] data_in;
+    output [7:0]  ascii_out [];
+    input  integer start_col;
+    input  integer num_digits;
+    
+    reg [3:0] hex_digit;
+    
+    for (integer i = 0; i < num_digits; i = i + 1) begin
+      hex_digit = data_in[4*(num_digits-1-i) +: 4];
+      if (hex_digit < 10)
+        ascii_out[start_col + i] = hex_digit + 8'h30; // 0-9
+      else
+        ascii_out[start_col + i] = hex_digit + 8'h37; // A-F (8'h41-8'h46)
+    end
+  endtask
+
+  // Lógica de Pintado de Píxel
+  wire pixel_on;
+  // font_pattern[15] es el bit más a la izquierda (columna 0)
+  assign pixel_on = font_pattern[15 - pixel_in_col]; 
+
+  // Colores (Blanco sobre Negro)
+  localparam COLOR_BG = 24'h000000; // Negro
+  localparam COLOR_FG = 24'hFFFFFF; // Blanco
+
+  always @* begin
+    if (!videoOn) begin
+        // Fuera del área visible
+        {vga_red, vga_green, vga_blue} = 24'h000000; 
+    end else if (pixel_on) begin
+        // Píxel de texto (Foreground)
+        {vga_red, vga_green, vga_blue} = COLOR_FG; 
+    end else begin
+        // Fondo (Background)
+        {vga_red, vga_green, vga_blue} = COLOR_BG; 
+    end
+  end
+
+// ===================================
+// Módulos Internos 
+// ===================================
+
+module clock1280x800(clock50, reset, vgaclk);
+  input clock50;
+  input reset;
+  output vgaclk;
+
+  wire  null;
+  // NOTA: Esta línea usa tu módulo vgaClock.v (la PLL real)
+  vgaClock clk(
+	.ref_clk_clk(clock50),
+	.ref_reset_reset(reset),
+	.reset_source_reset(null),
+	.vga_clk_clk(vgaclk));
+endmodule
+
+module vga_controller_1280x800 (
+  input clk,         // 83.5 MHz clock (or close approximation)
+  input reset,
+  output wire hsync,
+  output wire vsync,
+  output reg [10:0] hcount,  // Needs 11 bits (0-1439)
+  output reg [9:0] vcount,    // Needs 10 bits (0-822)
+  output video_on
+);
+
+// --------------------------
+// Timing Parameters (VESA Standard)
+// --------------------------
+// Horizontal Timings (Units: Pixels)
+parameter H_VISIBLE = 1280;  // Visible area
+parameter H_FP      = 48;    // Front porch
+parameter H_SYNC    = 32;    // Sync pulse
+parameter H_BP      = 80;    // Back porch
+parameter H_TOTAL   = H_VISIBLE + H_FP + H_SYNC + H_BP; // 1440
+
+// Vertical Timings (Units: Lines)
+parameter V_VISIBLE = 800;   // Visible area
+parameter V_FP      = 3;     // Front porch
+parameter V_SYNC    = 6;     // Sync pulse
+parameter V_BP      = 22;    // Back porch
+parameter V_TOTAL   = V_VISIBLE + V_FP + V_SYNC + V_BP; // 831
+
+// --------------------------
+// Counters and Sync Logic
+// --------------------------
+always @(posedge clk or posedge reset) begin
+  if (reset) begin
+    hcount <= 0;
+    vcount <= 0;
+  end else begin
+    // Horizontal counter
+    if (hcount == H_TOTAL - 1) begin
+      hcount <= 0;
+      // Vertical counter
+      if (vcount == V_TOTAL - 1)
+        vcount <= 0;
+      else
+        vcount <= vcount + 1;
+    end else begin
+      hcount <= hcount + 1;
+    end
+  end
+end
+
+// --------------------------
+// Sync Signals (Active HIGH for 1280x800)
+// --------------------------
+assign hsync = (hcount >= H_VISIBLE + H_FP) && 
+              (hcount < H_VISIBLE + H_FP + H_SYNC);
+
+assign vsync = (vcount >= V_VISIBLE + V_FP) && 
+              (vcount < V_VISIBLE + V_FP + V_SYNC);
+
+// --------------------------
+// Video Active Signal
+// --------------------------
+assign video_on = (hcount < H_VISIBLE) && (vcount < V_VISIBLE);
+
+endmodule
+
+endmodule // Fin del módulo principal color

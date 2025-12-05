@@ -1,0 +1,16 @@
+module InstructionMemory (
+    input  logic [31:0] addr, 
+    output logic [31:0] instr   
+);
+
+    logic [31:0] memory [0:255];
+
+    initial begin
+        $readmemh("program.hex", memory);
+    end
+
+    always_comb begin
+        instr = memory[addr[9:2]]; 
+    end
+
+endmodule

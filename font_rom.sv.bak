@@ -1,0 +1,177 @@
+// =================================================================
+// MODULO ROM DE FUENTES (16x16 pixels)
+// Almacena patrones de píxeles para caracteres ASCII necesarios
+// para mostrar texto de debug (Hexadecimal y Etiquetas).
+// =================================================================
+module font_rom (
+  input  [7:0] ascii_code, // Código ASCII (e.g., 'A' es 65 / 8'h41)
+  input  [3:0] row_index,  // Fila del píxel dentro del caracter (0 a 15)
+  output [15:0] pattern    // Patrón de 16 bits para la fila actual
+);
+
+  // Memoria interna de la fuente
+  // Dimensiones: [255:0] -> Códigos ASCII
+  // [0:15] -> Fila del caracter (16 filas)
+  reg [15:0] font_data [0:255][0:15];
+
+  // ======================================================
+  // Inicialización de la ROM (Codificación de Caracteres)
+  // ======================================================
+  initial begin
+    // 1. Rellenar con espacios (ASCII 32 / 8'h20) y caracteres no usados
+    for (integer i = 0; i <= 255; i = i + 1) begin
+        for (integer j = 0; j <= 15; j = j + 1) begin
+            font_data[i][j] = 16'h0000;
+        end
+    end
+
+    // --- Definición de Caracteres: 0-9 (8'h30 - 8'h39) ---
+    
+    // '0' (8'h30)
+    font_data[8'h30][1] = 16'h0E00; font_data[8'h30][2] = 16'h1180; font_data[8'h30][3] = 16'h1180; font_data[8'h30][4] = 16'h1180; 
+    font_data[8'h30][5] = 16'h1180; font_data[8'h30][6] = 16'h1180; font_data[8'h30][7] = 16'h1180; font_data[8'h30][8] = 16'h1180; 
+    font_data[8'h30][9] = 16'h1180; font_data[8'h30][10] = 16'h1180; font_data[8'h30][11] = 16'h1180; font_data[8'h30][12] = 16'h0E00; 
+    
+    // '1' (8'h31)
+    font_data[8'h31][1] = 16'h0400; font_data[8'h31][2] = 16'h0C00; font_data[8'h31][3] = 16'h0400; font_data[8'h31][4] = 16'h0400; 
+    font_data[8'h31][5] = 16'h0400; font_data[8'h31][6] = 16'h0400; font_data[8'h31][7] = 16'h0400; font_data[8'h31][8] = 16'h0400; 
+    font_data[8'h31][9] = 16'h0400; font_data[8'h31][10] = 16'h0400; font_data[8'h31][11] = 16'h0400; font_data[8'h31][12] = 16'h1F00; 
+    
+    // '2' (8'h32)
+    font_data[8'h32][1] = 16'h0E00; font_data[8'h32][2] = 16'h1180; font_data[8'h32][3] = 16'h0180; font_data[8'h32][4] = 16'h0180; 
+    font_data[8'h32][5] = 16'h0200; font_data[8'h32][6] = 16'h0400; font_data[8'h32][7] = 16'h0800; font_data[8'h32][8] = 16'h1000; 
+    font_data[8'h32][9] = 16'h1000; font_data[8'h32][10] = 16'h1180; font_data[8'h32][11] = 16'h1180; font_data[8'h32][12] = 16'h1F80; 
+    
+    // '3' (8'h33)
+    font_data[8'h33][1] = 16'h0F80; font_data[8'h33][2] = 16'h1080; font_data[8'h33][3] = 16'h0080; font_data[8'h33][4] = 16'h0180; 
+    font_data[8'h33][5] = 16'h0300; font_data[8'h33][6] = 16'h00C0; font_data[8'h33][7] = 16'h0080; font_data[8'h33][8] = 16'h1080; 
+    font_data[8'h33][9] = 16'h1080; font_data[8'h33][10] = 16'h1080; font_data[8'h33][11] = 16'h1080; font_data[8'h33][12] = 16'h0F00; 
+    
+    // '4' (8'h34)
+    font_data[8'h34][1] = 16'h0300; font_data[8'h34][2] = 16'h0500; font_data[8'h34][3] = 16'h0900; font_data[8'h34][4] = 16'h1100; 
+    font_data[8'h34][5] = 16'h1F00; font_data[8'h34][6] = 16'h0000; font_data[8'h34][7] = 16'h0000; font_data[8'h34][8] = 16'h0100; 
+    font_data[8'h34][9] = 16'h0100; font_data[8'h34][10] = 16'h0100; font_data[8'h34][11] = 16'h0100; font_data[8'h34][12] = 16'h0100; 
+    
+    // '5' (8'h35)
+    font_data[8'h35][1] = 16'h1F80; font_data[8'h35][2] = 16'h1000; font_data[8'h35][3] = 16'h1000; font_data[8'h35][4] = 16'h1000; 
+    font_data[8'h35][5] = 16'h1F00; font_data[8'h35][6] = 16'h0080; font_data[8'h35][7] = 16'h0080; font_data[8'h35][8] = 16'h0080; 
+    font_data[8'h35][9] = 16'h1080; font_data[8'h35][10] = 16'h1080; font_data[8'h35][11] = 16'h1080; font_data[8'h35][12] = 16'h0F00; 
+    
+    // '6' (8'h36)
+    font_data[8'h36][1] = 16'h03C0; font_data[8'h36][2] = 16'h0400; font_data[8'h36][3] = 16'h0800; font_data[8'h36][4] = 16'h1000; 
+    font_data[8'h36][5] = 16'h1C00; font_data[8'h36][6] = 16'h1400; font_data[8'h36][7] = 16'h1400; font_data[8'h36][8] = 16'h1400; 
+    font_data[8'h36][9] = 16'h1400; font_data[8'h36][10] = 16'h1400; font_data[8'h36][11] = 16'h1400; font_data[8'h36][12] = 16'h0800; 
+    
+    // '7' (8'h37)
+    font_data[8'h37][1] = 16'h1F00; font_data[8'h37][2] = 16'h1000; font_data[8'h37][3] = 16'h0800; font_data[8'h37][4] = 16'h0400; 
+    font_data[8'h37][5] = 16'h0200; font_data[8'h37][6] = 16'h0200; font_data[8'h37][7] = 16'h0200; font_data[8'h37][8] = 16'h0200; 
+    font_data[8'h37][9] = 16'h0200; font_data[8'h37][10] = 16'h0200; font_data[8'h37][11] = 16'h0200; font_data[8'h37][12] = 16'h0200; 
+    
+    // '8' (8'h38)
+    font_data[8'h38][1] = 16'h0E00; font_data[8'h38][2] = 16'h1180; font_data[8'h38][3] = 16'h1180; font_data[8'h38][4] = 16'h0E00; 
+    font_data[8'h38][5] = 16'h1180; font_data[8'h38][6] = 16'h1180; font_data[8'h38][7] = 16'h1180; font_data[8'h38][8] = 16'h1180; 
+    font_data[8'h38][9] = 16'h1180; font_data[8'h38][10] = 16'h1180; font_data[8'h38][11] = 16'h1180; font_data[8'h38][12] = 16'h0E00; 
+    
+    // '9' (8'h39)
+    font_data[8'h39][1] = 16'h0E00; font_data[8'h39][2] = 16'h1180; font_data[8'h39][3] = 16'h1180; font_data[8'h39][4] = 16'h1180; 
+    font_data[8'h39][5] = 16'h1180; font_data[8'h39][6] = 16'h1180; font_data[8'h39][7] = 16'h1180; font_data[8'h39][8] = 16'h1180; 
+    font_data[8'h39][9] = 16'h0F80; font_data[8'h39][10] = 16'h0180; font_data[8'h39][11] = 16'h0180; font_data[8'h39][12] = 16'h0F00; 
+
+    // --- Definición de Caracteres: A-F (8'h41 - 8'h46) ---
+    
+    // 'A' (8'h41)
+    font_data[8'h41][1] = 16'h0E00; font_data[8'h41][2] = 16'h1100; font_data[8'h41][3] = 16'h1100; font_data[8'h41][4] = 16'h1100; 
+    font_data[8'h41][5] = 16'h1F00; font_data[8'h41][6] = 16'h1100; font_data[8'h41][7] = 16'h1100; font_data[8'h41][8] = 16'h1100; 
+    font_data[8'h41][9] = 16'h1100; font_data[8'h41][10] = 16'h1100; font_data[8'h41][11] = 16'h1100; font_data[8'h41][12] = 16'h1100; 
+    
+    // 'B' (8'h42)
+    font_data[8'h42][1] = 16'h1F00; font_data[8'h42][2] = 16'h1100; font_data[8'h42][3] = 16'h1100; font_data[8'h42][4] = 16'h1F00; 
+    font_data[8'h42][5] = 16'h1100; font_data[8'h42][6] = 16'h1100; font_data[8'h42][7] = 16'h1100; font_data[8'h42][8] = 16'h1100; 
+    font_data[8'h42][9] = 16'h1100; font_data[8'h42][10] = 16'h1100; font_data[8'h42][11] = 16'h1100; font_data[8'h42][12] = 16'h1F00; 
+    
+    // 'C' (8'h43)
+    font_data[8'h43][1] = 16'h0F00; font_data[8'h43][2] = 16'h1000; font_data[8'h43][3] = 16'h1000; font_data[8'h43][4] = 16'h1000; 
+    font_data[8'h43][5] = 16'h1000; font_data[8'h43][6] = 16'h1000; font_data[8'h43][7] = 16'h1000; font_data[8'h43][8] = 16'h1000; 
+    font_data[8'h43][9] = 16'h1000; font_data[8'h43][10] = 16'h1000; font_data[8'h43][11] = 16'h1000; font_data[8'h43][12] = 16'h0F00; 
+    
+    // 'D' (8'h44)
+    font_data[8'h44][1] = 16'h1E00; font_data[8'h44][2] = 16'h1100; font_data[8'h44][3] = 16'h1100; font_data[8'h44][4] = 16'h1100; 
+    font_data[8'h44][5] = 16'h1100; font_data[8'h44][6] = 16'h1100; font_data[8'h44][7] = 16'h1100; font_data[8'h44][8] = 16'h1100; 
+    font_data[8'h44][9] = 16'h1100; font_data[8'h44][10] = 16'h1100; font_data[8'h44][11] = 16'h1100; font_data[8'h44][12] = 16'h1E00; 
+    
+    // 'E' (8'h45)
+    font_data[8'h45][1] = 16'h1F00; font_data[8'h45][2] = 16'h1000; font_data[8'h45][3] = 16'h1000; font_data[8'h45][4] = 16'h1000; 
+    font_data[8'h45][5] = 16'h1F00; font_data[8'h45][6] = 16'h1000; font_data[8'h45][7] = 16'h1000; font_data[8'h45][8] = 16'h1000; 
+    font_data[8'h45][9] = 16'h1000; font_data[8'h45][10] = 16'h1000; font_data[8'h45][11] = 16'h1000; font_data[8'h45][12] = 16'h1F00; 
+    
+    // 'F' (8'h46)
+    font_data[8'h46][1] = 16'h1F00; font_data[8'h46][2] = 16'h1000; font_data[8'h46][3] = 16'h1000; font_data[8'h46][4] = 16'h1000; 
+    font_data[8'h46][5] = 16'h1F00; font_data[8'h46][6] = 16'h1000; font_data[8'h46][7] = 16'h1000; font_data[8'h46][8] = 16'h1000; 
+    font_data[8'h46][9] = 16'h1000; font_data[8'h46][10] = 16'h1000; font_data[8'h46][11] = 16'h1000; font_data[8'h46][12] = 16'h1000; 
+
+    // --- Definición de Caracteres para Etiquetas ---
+    
+    // 'P' (8'h50) - PC
+    font_data[8'h50][1] = 16'h1E00; font_data[8'h50][2] = 16'h1100; font_data[8'h50][3] = 16'h1100; font_data[8'h50][4] = 16'h1100; 
+    font_data[8'h50][5] = 16'h1E00; font_data[8'h50][6] = 16'h1000; font_data[8'h50][7] = 16'h1000; font_data[8'h50][8] = 16'h1000; 
+    font_data[8'h50][9] = 16'h1000; font_data[8'h50][10] = 16'h1000; font_data[8'h50][11] = 16'h1000; font_data[8'h50][12] = 16'h1000; 
+    
+    // 'C' (8'h43) - PC (ya definido)
+    
+    // 'I' (8'h49) - INSTR
+    font_data[8'h49][1] = 16'h1F00; font_data[8'h49][2] = 16'h0800; font_data[8'h49][3] = 16'h0800; font_data[8'h49][4] = 16'h0800; 
+    font_data[8'h49][5] = 16'h0800; font_data[8'h49][6] = 16'h0800; font_data[8'h49][7] = 16'h0800; font_data[8'h49][8] = 16'h0800; 
+    font_data[8'h49][9] = 16'h0800; font_data[8'h49][10] = 16'h0800; font_data[8'h49][11] = 16'h0800; font_data[8'h49][12] = 16'h1F00; 
+    
+    // 'N' (8'h4E) - INSTR
+    font_data[8'h4E][1] = 16'h1100; font_data[8'h4E][2] = 16'h1900; font_data[8'h4E][3] = 16'h1500; font_data[8'h4E][4] = 16'h1300; 
+    font_data[8'h4E][5] = 16'h1100; font_data[8'h4E][6] = 16'h1100; font_data[8'h4E][7] = 16'h1100; font_data[8'h4E][8] = 16'h1100; 
+    font_data[8'h4E][9] = 16'h1100; font_data[8'h4E][10] = 16'h1100; font_data[8'h4E][11] = 16'h1100; font_data[8'h4E][12] = 16'h1100; 
+    
+    // 'S' (8'h53) - RS1, RS2
+    font_data[8'h53][1] = 16'h0F80; font_data[8'h53][2] = 16'h1000; font_data[8'h53][3] = 16'h1000; font_data[8'h53][4] = 16'h1000; 
+    font_data[8'h53][5] = 16'h0F80; font_data[8'h53][6] = 16'h0080; font_data[8'h53][7] = 16'h0080; font_data[8'h53][8] = 16'h0080; 
+    font_data[8'h53][9] = 16'h1080; font_data[8'h53][10] = 16'h1080; font_data[8'h53][11] = 16'h1080; font_data[8'h53][12] = 16'h0F00; 
+    
+    // 'T' (8'h54) - INSTR
+    font_data[8'h54][1] = 16'h1F00; font_data[8'h54][2] = 16'h0800; font_data[8'h54][3] = 16'h0800; font_data[8'h54][4] = 16'h0800; 
+    font_data[8'h54][5] = 16'h0800; font_data[8'h54][6] = 16'h0800; font_data[8'h54][7] = 16'h0800; font_data[8'h54][8] = 16'h0800; 
+    font_data[8'h54][9] = 16'h0800; font_data[8'h54][10] = 16'h0800; font_data[8'h54][11] = 16'h0800; font_data[8'h54][12] = 16'h0800; 
+    
+    // 'R' (8'h52) - INSTR, MR, RR
+    font_data[8'h52][1] = 16'h1E00; font_data[8'h52][2] = 16'h1100; font_data[8'h52][3] = 16'h1100; font_data[8'h52][4] = 16'h1E00; 
+    font_data[8'h52][5] = 16'h1400; font_data[8'h52][6] = 16'h1200; font_data[8'h52][7] = 16'h1100; font_data[8'h52][8] = 16'h1100; 
+    font_data[8'h52][9] = 16'h1100; font_data[8'h52][10] = 16'h1100; font_data[8'h52][11] = 16'h1100; font_data[8'h52][12] = 16'h1100; 
+    
+    // 'A' (8'h41) - ALU (ya definido)
+    
+    // 'L' (8'h4C) - ALU
+    font_data[8'h4C][1] = 16'h1000; font_data[8'h4C][2] = 16'h1000; font_data[8'h4C][3] = 16'h1000; font_data[8'h4C][4] = 16'h1000; 
+    font_data[8'h4C][5] = 16'h1000; font_data[8'h4C][6] = 16'h1000; font_data[8'h4C][7] = 16'h1000; font_data[8'h4C][8] = 16'h1000; 
+    font_data[8'h4C][9] = 16'h1000; font_data[8'h4C][10] = 16'h1000; font_data[8'h4C][11] = 16'h1000; font_data[8'h4C][12] = 16'h1F00; 
+    
+    // 'U' (8'h55) - ALU
+    font_data[8'h55][1] = 16'h1100; font_data[8'h55][2] = 16'h1100; font_data[8'h55][3] = 16'h1100; font_data[8'h55][4] = 16'h1100; 
+    font_data[8'h55][5] = 16'h1100; font_data[8'h55][6] = 16'h1100; font_data[8'h55][7] = 16'h1100; font_data[8'h55][8] = 16'h1100; 
+    font_data[8'h55][9] = 16'h1100; font_data[8'h55][10] = 16'h1100; font_data[8'h55][11] = 16'h1100; font_data[8'h55][12] = 16'h0E00; 
+    
+    // 'W' (8'h57) - WB (Write Back)
+    font_data[8'h57][1] = 16'h1100; font_data[8'h57][2] = 16'h1100; font_data[8'h57][3] = 16'h1100; font_data[8'h57][4] = 16'h1100; 
+    font_data[8'h57][5] = 16'h1100; font_data[8'h57][6] = 16'h1100; font_data[8'h57][7] = 16'h1500; font_data[8'h57][8] = 16'h1500; 
+    font_data[8'h57][9] = 16'h1500; font_data[8'h57][10] = 16'h1900; font_data[8'h57][11] = 16'h1900; font_data[8'h57][12] = 16'h1100; 
+    
+    // 'B' (8'h42) - WB (ya definido)
+    
+    // ':' (8'h3A) - Separador
+    font_data[8'h3A][5] = 16'h0400;
+    font_data[8'h3A][6] = 16'h0400;
+    font_data[8'h3A][10] = 16'h0400;
+    font_data[8'h3A][11] = 16'h0400;
+
+  end
+
+  // Lógica de lectura de la ROM: Lectura combinacional
+  // Utiliza el código ASCII y la fila para buscar el patrón de píxeles
+  assign pattern = font_data[ascii_code][row_index];
+  
+endmodule

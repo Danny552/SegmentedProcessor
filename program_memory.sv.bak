@@ -1,0 +1,68 @@
+module data_memory(
+    input  logic         clk,
+    input  logic         MemRead,
+    input  logic         MemWrite,
+    input  logic [2:0]   funct3,
+    input  logic [31:0]  addr,
+    input  logic [31:0]  write_data,
+    output logic [31:0]  read_data,
+    output logic [7:0]   mem_debug [0:127]
+);
+
+    logic [7:0] mem [0:127];
+
+    logic [31:0] temp_mem [0:31];
+
+    initial begin
+	 
+        $readmemh("memory.hex", temp_mem);
+
+        for (int i = 0; i < 32; i++) begin
+            mem[i*4 + 0] = temp_mem[i][7:0];   // Byte menos significativo (LSB)
+            mem[i*4 + 1] = temp_mem[i][15:8];
+            mem[i*4 + 2] = temp_mem[i][23:16];
+            mem[i*4 + 3] = temp_mem[i][31:24]; // Byte mas significativo (MSB)
+        end
+    end
+
+
+    always_ff @(posedge clk) begin
+        if (MemWrite) begin
+            unique case (funct3)
+                3'b000: mem[addr] <= write_data[7:0]; // sb
+                3'b001: begin // sh
+                    mem[addr]   <= write_data[7:0];
+                    mem[addr+1] <= write_data[15:8];
+                end
+                3'b010: begin // sw
+                    mem[addr]   <= write_data[7:0];
+                    mem[addr+1] <= write_data[15:8];
+                    mem[addr+2] <= write_data[23:16];
+                    mem[addr+3] <= write_data[31:24];
+                end
+            endcase
+        end
+    end
+
+    always_comb begin
+        if (MemRead) begin
+            unique case (funct3)
+                // --- Cargas con signo (lb, lh) ---
+                3'b000: read_data = {{24{mem[addr][7]}}, mem[addr]}; // lb
+                3'b001: read_data = {{16{mem[addr+1][7]}}, mem[addr+1], mem[addr]}; // lh
+                3'b010: read_data = {mem[addr+3], mem[addr+2], mem[addr+1], mem[addr]}; // lw
+
+                // --- Cargas sin signo (lbu, lhu) ---
+                3'b100: read_data = {24'b0, mem[addr]}; // lbu
+                3'b101: read_data = {16'b0, mem[addr+1], mem[addr]}; // lhu
+                
+                default: read_data = 32'b0;
+            endcase
+        end else begin
+            read_data = 32'b0;
+        end
+    end
+
+    assign mem_debug = mem;
+
+endmodule

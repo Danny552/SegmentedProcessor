@@ -1,0 +1,14 @@
+module mux_mem_alu (
+    input  logic [31:0] alu_result,
+    input  logic [31:0] mem_data,
+    input  logic        MemToReg,   // control: 0 = ALU, 1 = Memoria
+    output logic [31:0] write_back
+);
+
+    always_comb begin
+        if (MemToReg)
+            write_back = mem_data;
+        else
+            write_back = alu_result;
+    end
+endmodule

@@ -1,0 +1,17 @@
+module mux2_1( 
+	input logic[31:0] x,y,
+	input logic select
+	output logic[31:0] r
+);
+
+/*para el caso de la alu 
+x->salida registro rs2
+y-> imm
+select-> ALUBsrc
+r-> segundo operando de la alu
+si select es 1 -> y si no ->x
+*/
+
+assign r = select? y:x;
+
+endmodule

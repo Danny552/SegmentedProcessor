@@ -1,0 +1,46 @@
+module decoder (
+    input  logic [31:0] instr,
+    output logic [3:0]  AluOp,   
+    output logic        regWrite,
+    output logic [4:0]  rs1, rs2, rd
+);
+
+    logic [6:0] opcode;
+    logic [2:0] funct3;
+    logic [6:0] funct7;
+
+    assign opcode = instr[6:0];
+    assign rd     = instr[11:7];
+    assign funct3 = instr[14:12];
+    assign rs1    = instr[19:15];
+    assign rs2    = instr[24:20];
+    assign funct7 = instr[31:25];
+
+    always_comb begin
+        regWrite = 0;
+        AluOp = 4'b0000;
+
+        case (opcode)
+            7'b0110011: begin  // Tipo R
+                regWrite = 1;
+                case ({funct7, funct3})
+                    {7'b0000000, 3'b000}: AluOp = 4'b0000; // ADD
+                    {7'b0100000, 3'b000}: AluOp = 4'b0001; // SUB
+                    {7'b0000000, 3'b111}: AluOp = 4'b0011; // AND
+                    {7'b0000000, 3'b110}: AluOp = 4'b0100; // OR
+                    {7'b0000000, 3'b100}: AluOp = 4'b0010; // XOR
+                    {7'b0000000, 3'b001}: AluOp = 4'b0101; // SLL
+                    {7'b0000000, 3'b101}: AluOp = 4'b0110; // SRL
+                    {7'b0100000, 3'b101}: AluOp = 4'b0111; // SRA
+                    {7'b0000000, 3'b010}: AluOp = 4'b1000; // SLT
+                    {7'b0000000, 3'b011}: AluOp = 4'b1001; // SLTU
+                endcase
+            end
+            default: begin
+                regWrite = 0;
+                AluOp = 4'b0000;
+            end
+        endcase
+    end
+
+endmodule

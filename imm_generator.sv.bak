@@ -1,0 +1,21 @@
+//imm 
+module imm_generator(
+	input  logic [31:0] instr, //instruccion
+	input logic [2:0]  imm_src,  //codigo del tipo de instruccion
+	output logic [31:0] imm //inmediato en 32 bits
+)
+
+/*imm_src code
+000 -> tipo I aritmeticologicas
+001 -> tipo I carga
+*/
+
+always_comb begin
+	case(imm_src)
+	//concatena 20 bits de signo y el imm 
+		3'b000: imm = {{20{instr[31]}}, instr[31:20]};
+		
+		default: imm = 32'b0;
+	end case
+end
+end module
